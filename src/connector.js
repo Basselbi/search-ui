@@ -94,7 +94,7 @@ let pagerContainerTemplateHTML = document.getElementById('sr-pager-container')?.
 
 // Init parameters and UI
 function initSearchUI() {
- 
+
 
 	if (!baseElement || !DOMPurify) {
 		return;
@@ -400,10 +400,12 @@ function initTpl() {
 		}
 	}
 }
-
+function sanitizeQuery(q) {
+	return q.replace(/<[^>]*>?/gm, '');
+}
 // Initiate headless engine
 function initEngine() {
- 
+
 	headlessEngine = buildSearchEngine({
 		configuration: {
 			organizationEndpoints: params.endpoints,
@@ -440,8 +442,10 @@ function initEngine() {
 							filters: {
 								searchPageUrl: params.originLevel3
 							}
-							
+
 						};
+						let q = requestContent.q;
+						requestContent.q = sanitizeQuery(q);
 						request.body = JSON.stringify(requestContent);
 					}
 				} catch {
@@ -530,7 +534,7 @@ function initEngine() {
 			}
 		}
 		if (urlParams.dmn) {
-			aqString += ' @hostname="' + urlParams.dmn + '"';
+			aqString += ' @uri="' + urlParams.dmn + '"';
 		}
 
 		if (urlParams.sort) {
@@ -914,6 +918,15 @@ function updateQuerySummaryState(newState) {
 				.replace('%[numberOfResults]', numberOfResults)
 				.replace('%[query]', DOMPurify.sanitize(querySummaryState.query))
 				.replace('%[queryDurationInSeconds]', querySummaryState.durationInSeconds.toLocaleString(params.lang));
+
+			const dirty = querySummaryElement.innerHTML;
+
+			const clean = DOMPurify.sanitize(dirty, {
+				ALLOWED_TAGS: [],
+				FORBID_ATTR: ["style"],
+			});
+
+			querySummaryElement.innerHTML = "<h2>" + clean + "</h2>";
 		}
 		else {
 			querySummaryElement.innerHTML = noResultTemplateHTML;
